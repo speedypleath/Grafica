@@ -13,9 +13,11 @@
                 "-o",
                 "${workspaceFolder}/bin/${fileBasenameNoExtension}",
                 "${workspaceFolder}/lib/loadShaders.cpp",
+                "${workspaceFolder}/lib/imageloader.cpp",
                 "-lGLU",
                 "-lGL",
                 "-lglut",
+                "-lSOIL",
                 "-lGLEW"
             ],
             "options": {
