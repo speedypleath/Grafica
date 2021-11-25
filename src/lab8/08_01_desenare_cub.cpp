@@ -2,7 +2,6 @@
 - Folosirea indexarii pentru a trasa separata fetele si muchiile unui obiect 3D (cub)
 - Rolul testului de adancime
 */
-#include <windows.h>  // biblioteci care urmeaza sa fie incluse
 #include <stdlib.h> // necesare pentru citirea shader-elor
 #include <stdio.h>
 #include <math.h>
@@ -10,10 +9,11 @@
 #include <GL/glew.h> // glew apare inainte de freeglut
 #include <GL/freeglut.h> // nu trebuie uitat freeglut.h
 #include "loadShaders.h"
-#include "glm/glm/glm.hpp"  
-#include "glm/glm/gtc/matrix_transform.hpp"
-#include "glm/glm/gtx/transform.hpp"
-#include "glm/glm/gtc/type_ptr.hpp"
+
+#include "glm/glm.hpp"  
+#include "glm/gtc/matrix_transform.hpp"
+#include "glm/gtx/transform.hpp"
+#include "glm/gtc/type_ptr.hpp"
 using namespace std;
 
 // identificatori 
@@ -25,7 +25,7 @@ ProgramId,
 viewLocation,
 projLocation,
 codColLocation;
-
+float PI=3.141592;
 // variabile
 int codCol;
 
@@ -83,40 +83,40 @@ void processSpecialKeys(int key, int xx, int yy)
 }
 void CreateVBO(void)
 {
-	// varfurile 
-	GLfloat Vertices[] =
-	{
-		// varfurile din planul z=-50  
-		// coordonate                   // culori			
-		-50.0f,  -50.0f, -50.0f, 1.0f,  0.0f, 1.0f, 0.0f,
-		50.0f,  -50.0f,  -50.0f, 1.0f,   0.0f, 0.9f, 0.0f,
-		50.0f,  50.0f,  -50.0f, 1.0f,    0.0f, 0.6f, 0.0f,
-		-50.0f,  50.0f, -50.0f, 1.0f,   0.0f, 0.2f, 0.0f,
-		// varfurile din planul z=+50  
-		// coordonate                   // culori			
-		-50.0f,  -50.0f, 50.0f, 1.0f,  1.0f, 0.0f, 0.0f,
-		50.0f,  -50.0f,  50.0f, 1.0f,   0.7f, 0.0f, 0.0f,
-		50.0f,  50.0f,  50.0f, 1.0f,    0.5f, 0.0f, 0.0f,
-		-50.0f,  50.0f, 50.0f, 1.0f,   0.1f, 0.0f, 0.0f,
-	};
-
 	// indicii pentru varfuri
-	GLubyte Indices[] =
-	{
-		1, 0, 2,   2, 0, 3,  //  Fata "de jos"
-		2, 3, 6,   6, 3, 7,  // Lateral 
-		7, 3, 4,   4, 3, 0,  // Lateral 
-		4, 0, 5,   5, 0, 1,  // Lateral 
-		1, 2, 5,   5, 2, 6,  // Lateral 
-		5, 6, 4,   4, 6, 7, //  Fata "de sus"
-		0, 1, 2, 3,  // Contur fata de jos
-		4, 5, 6, 7,  // Contur fata de sus
-		0, 4, // Muchie laterala
-		1, 5, // Muchie laterala
-		2, 6, // Muchie laterala
-		3, 7 // Muchie laterala
-	};
-
+	GLuint Indices[397];
+    GLfloat Vertices[700];
+    int k=0;
+    for(int i=0; i<99; i++){
+        float theta = 2 * PI * i / 99;
+        Vertices[k++] = cos(theta) * 100.0f;
+        Vertices[k++] = sin(theta) * 100.0f;
+        Vertices[k++] = 50.0f;
+        Vertices[k++] = 1.0f;
+		Vertices[k++] = 0.0f;
+        Vertices[k++] = 1.0f;
+        Vertices[k++] = 0.0f;
+    }
+	Vertices[k++] = 0.0f;
+	Vertices[k++] = 0.0f;
+	Vertices[k++] = -50.0f;
+	Vertices[k++] = 1.0f;
+	Vertices[k++] = 1.0f;
+	Vertices[k++] = 0.0f;
+	Vertices[k++] = 0.0f;
+	for(int i=0; i<99; i++){
+		Indices[i] = i; // baza
+	}
+	Indices[99] = 0;
+	k = 100;
+	for(int i=0; i<98; i++){
+		Indices[k++] = 99;
+		Indices[k++] = i;
+		Indices[k++] = i+1;
+	}
+	Indices[k++] = 99;
+	Indices[k++] = 98;
+	Indices[k++] = 0;
 	// generare VAO/buffere
 	glGenBuffers(1, &VboId); // atribute
 	glGenBuffers(1, &EboId); // indici
@@ -143,7 +143,7 @@ void DestroyVBO(void)
 }
 void CreateShaders(void)
 {
-	ProgramId = LoadShaders("08_01_Shader.vert", "08_01_Shader.frag");
+	ProgramId = LoadShaders("../../res/08_01_Shader.vert", "../../res/08_01_Shader.frag");
 	glUseProgram(ProgramId);
 }
 void DestroyShaders(void)
@@ -190,14 +190,13 @@ void RenderFunction(void)
 	// Fetele
 	codCol = 0;
 	glUniform1i(codColLocation, codCol);
-	glDrawElements(GL_TRIANGLES, 36, GL_UNSIGNED_BYTE, 0);
-	// Muchiile
+	glDrawElements(GL_POLYGON, 100, GL_UNSIGNED_INT, 0);
+	glDrawElements(GL_TRIANGLES, 297, GL_UNSIGNED_INT, (GLvoid*)(100 * sizeof(GLuint)));
+	//Muchiile
 	codCol = 1;
 	glUniform1i(codColLocation, codCol);
-	glLineWidth(3.5);
-	glDrawElements(GL_LINE_LOOP, 4, GL_UNSIGNED_BYTE, (void*)(36));
-	glDrawElements(GL_LINE_LOOP, 4, GL_UNSIGNED_BYTE, (void*)(40));
-	glDrawElements(GL_LINES, 8, GL_UNSIGNED_BYTE, (void*)(44));
+	glLineWidth(5.0f);
+	glDrawElements(GL_LINE_LOOP, 100, GL_UNSIGNED_INT, 0);
 
 	glutSwapBuffers();
 	glFlush();

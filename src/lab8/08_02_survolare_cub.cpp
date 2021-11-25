@@ -1,7 +1,6 @@
 /*
 - Survolarea unui obiect folosind coordonate sferice.
 */
-#include <windows.h>  // biblioteci care urmeaza sa fie incluse
 #include <stdlib.h> // necesare pentru citirea shader-elor
 #include <stdio.h>
 #include <math.h>
@@ -9,10 +8,10 @@
 #include <GL/glew.h> // glew apare inainte de freeglut
 #include <GL/freeglut.h> // nu trebuie uitat freeglut.h
 #include "loadShaders.h"
-#include "glm/glm/glm.hpp"  
-#include "glm/glm/gtc/matrix_transform.hpp"
-#include "glm/glm/gtx/transform.hpp"
-#include "glm/glm/gtc/type_ptr.hpp"
+#include "glm/glm.hpp"  
+#include "glm/gtc/matrix_transform.hpp"
+#include "glm/gtx/transform.hpp"
+#include "glm/gtc/type_ptr.hpp"
 using namespace std;
 
 // identificatori 
@@ -154,7 +153,7 @@ void DestroyVBO(void)
 }
 void CreateShaders(void)
 {
-	ProgramId = LoadShaders("08_02_Shader.vert", "08_02_Shader.frag");
+	ProgramId = LoadShaders("../../res/08_02_Shader.vert", "../../res/08_02_Shader.frag");
 	glUseProgram(ProgramId);
 }
 void DestroyShaders(void)
