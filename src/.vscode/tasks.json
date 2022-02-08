@@ -8,19 +8,8 @@
                 "-fdiagnostics-color=always",
                 "-g",
                 "${file}",
-                "-I",
-                "${workspaceFolder}/include",
                 "-o",
-                "${workspaceFolder}/bin/${fileBasenameNoExtension}",
-                "${workspaceFolder}/lib/loadShaders.cpp",
-                "${workspaceFolder}/lib/imageloader.cpp",
-                "${workspaceFolder}/lib/errorHandle.cpp",
-                "${workspaceFolder}/lib/Shader.cpp",
-                "-lGLU",
-                "-lGL",
-                "-lglut",
-                "-lSOIL",
-                "-lGLEW"
+                "${fileDirname}/${fileBasenameNoExtension}"
             ],
             "options": {
                 "cwd": "${fileDirname}"

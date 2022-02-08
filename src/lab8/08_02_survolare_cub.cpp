@@ -30,7 +30,7 @@ int codCol;
 
 // variabile pentru matricea de vizualizare
 float Refx = 0.0f, Refy = 0.0f, Refz = 0.0f;
-float alpha = 0.0f, beta = 0.0f, dist = 200.0f;
+float alpha = 0.0f, yaw = 0.0f, dist = 200.0f;
 float Obsx, Obsy, Obsz;
 float Vx = 0.0f, Vy = 0.0f, Vz = -1.0f;
 float incr_alpha1 = 0.01, incr_alpha2 = 0.01;
@@ -62,10 +62,10 @@ void processSpecialKeys(int key, int xx, int yy)
 	switch (key)
 	{
 	case GLUT_KEY_LEFT:
-		beta -= 0.01;
+		yaw -= 0.01;
 		break;
 	case GLUT_KEY_RIGHT:
-		beta += 0.01;
+		yaw += 0.01;
 		break;
 	case GLUT_KEY_UP:
 		alpha += incr_alpha1;
@@ -90,6 +90,7 @@ void processSpecialKeys(int key, int xx, int yy)
 		}
 		break;
 	}
+	std::cout<<"yaw: "<<yaw<<" pitch: "<<alpha<<std::endl;
 }
 void CreateVBO(void)
 {
@@ -184,8 +185,8 @@ void RenderFunction(void)
 	glBindBuffer(GL_ELEMENT_ARRAY_BUFFER, EboId);
 
 	//pozitia observatorului
-	Obsx = Refx + dist * cos(alpha) * cos(beta);
-	Obsy = Refy + dist * cos(alpha) * sin(beta);
+	Obsx = Refx + dist * cos(alpha) * cos(yaw);
+	Obsy = Refy + dist * cos(alpha) * sin(yaw);
 	Obsz = Refz + dist * sin(alpha);
 
 	// reperul de vizualizare

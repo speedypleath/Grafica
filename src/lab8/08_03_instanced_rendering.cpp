@@ -10,6 +10,7 @@
 #include "glm/gtc/matrix_transform.hpp"
 #include "glm/gtx/transform.hpp"
 #include "glm/gtc/type_ptr.hpp"
+#include "Shader.h"
 
 using namespace std;
 
@@ -18,114 +19,31 @@ const GLfloat PI = 3.141592;
 
 // identificatori 
 GLuint
-VaoId,
+ColorBufferId,
+ProgramId;
+Shader *shader;
+glm::mat4 view, projection;
+void CreateVBO(void)
+{
+	GLuint VaoId,
 VBPos,
 VBCol,
 VBModelMat,
-EboId,
-ColorBufferId,
-ProgramId,
-viewLocation,
-projLocation,
-codColLocation,
-codCol;
-
-// variabile pentru matricea de vizualizare
-float Obsx = 0.0, Obsy = 0.0, Obsz = -800.f;
-float Refx = 0.0f, Refy = 0.0f, Refz = 0.0f;
-float Vx = 0.0f, Vy = 0.0f, Vz = -1.0f;
-
-// variabile pentru matricea de proiectie
-float width = 800, height = 600,  xwmin = -200.f, xwmax = 200, ywmin = -200, ywmax = 200, znear = 1, fovdeg = 90;
-float incr_alpha1 = 0.01, incr_alpha2 = 0.01;
-float alpha = 0.0f, beta = 0.0f, dist = 1800.0f;
-// vectori
-glm::vec3 Obs, PctRef, Vert;
-
-// matrice utilizate
-glm::mat4 view, projection;
-
-void processNormalKeys(unsigned char key, int x, int y)
-{
-	switch (key) {
-	case 'l':
-		Vx += 0.1;
-		break;
-	case 'r':
-		Vx -= 0.1;
-		break;
-	case '-':
-		dist -= 5.0;
-		break;
-	case '+':
-		dist += 5.0;
-		break;
-	}
-	if (key == 27)
-		exit(0);
-}
-void processSpecialKeys(int key, int xx, int yy) {
-switch (key)
+EboId;
+	// Varfurile 
+	GLfloat Vertices[] =
 	{
-	case GLUT_KEY_LEFT:
-		beta -= 0.01;
-		break;
-	case GLUT_KEY_RIGHT:
-		beta += 0.01;
-		break;
-	case GLUT_KEY_UP:
-		alpha += incr_alpha1;
-		if (abs(alpha - PI / 2) < 0.05)
-		{
-			incr_alpha1 = 0.f;
-		}
-		else
-		{
-			incr_alpha1 = 0.01f;
-		}
-		break;
-	case GLUT_KEY_DOWN:
-		alpha -= incr_alpha2;
-		if (abs(alpha + PI / 2) < 0.05)
-		{
-			incr_alpha2 = 0.f;
-		}
-		else
-		{
-			incr_alpha2 = 0.01f;
-		}
-		break;
-	}
-}
-void CreateVBO(void)
-{
-GLuint Indices[397];
-    GLfloat Vertices[400];
-    int k=0;
-    for(int i=0; i<99; i++){
-        float theta = 2 * PI * i / 99;
-        Vertices[k++] = cos(theta) * 100.0f;
-        Vertices[k++] = sin(theta) * 100.0f;
-        Vertices[k++] = 50.0f;
-        Vertices[k++] = 1.0f;
-    }
-	Vertices[k++] = 0.0f;
-	Vertices[k++] = 0.0f;
-	Vertices[k++] = -50.0f;
-	Vertices[k++] = 1.0f;
-	for(int i=0; i<99; i++){
-		Indices[i] = i; // baza
-	}
-	Indices[99] = 0;
-	k = 100;
-	for(int i=0; i<98; i++){
-		Indices[k++] = 99;
-		Indices[k++] = i;
-		Indices[k++] = i+1;
-	}
-	Indices[k++] = 99;
-	Indices[k++] = 98;
-	Indices[k++] = 0;
+		// punctele din planul z=-50   coordonate                   		
+		-50.0f,  -50.0f, -50.0f, 1.0f,
+		50.0f,  -50.0f,  -50.0f, 1.0f,
+		50.0f,  50.0f,  -50.0f, 1.0f,
+		-50.0f,  50.0f, -50.0f, 1.0f,
+		// punctele din planul z=+50  coordonate                   		
+		-50.0f,  -50.0f, 50.0f, 1.0f,
+		50.0f,  -50.0f,  50.0f, 1.0f,
+		50.0f,  50.0f,  50.0f, 1.0f,
+		-50.0f,  50.0f, 50.0f, 1.0f,
+	};
 
 	// Culorile instantelor
 	glm::vec4 Colors[INSTANCE_COUNT];
@@ -147,6 +65,24 @@ GLuint Indices[397];
 		MatModel[n] = glm::translate(glm::mat4(1.0f), glm::vec3(80 * n * sin(10.f * n * 180 / PI), 80 * n * cos(10.f * n * 180 / PI), 0.0)) * glm::rotate(glm::mat4(1.0f), n * PI / 8, glm::vec3(n, 2 * n * n, n / 3));
 	}
 
+	// indicii pentru varfuri
+	GLubyte Indices[] =
+	{
+	  1, 2, 0,   0, 2, 3,  //  Fata "de jos"
+	  2, 3, 6,   6, 3, 7,
+	  7, 3, 4,   4, 3, 0,
+	  4, 0, 5,   5, 0, 1,
+	  1, 2, 5,   5, 2, 6,
+	  5, 6, 4,   4, 6, 7, //  Fata "de sus"
+	  0, 1, 2, 3,  // Contur fata de jos
+	  4, 5, 6, 7,  // Contur fata de sus
+	  0, 4,
+	  1, 5,
+	  2, 6,
+	  3, 7
+	};
+
+
 	// generare buffere
 	glGenVertexArrays(1, &VaoId);
 	glGenBuffers(1, &VBPos);
@@ -167,7 +103,7 @@ GLuint Indices[397];
 	glBindBuffer(GL_ARRAY_BUFFER, VBCol); // legare buffer
 	glBufferData(GL_ARRAY_BUFFER, sizeof(Colors), Colors, GL_STATIC_DRAW);
 	glEnableVertexAttribArray(1);
-	glVertexAttribPointer(1, 4, GL_FLOAT, GL_FALSE, sizeof(glm::vec4), (GLvoid*)0);
+	glVertexAttribPointer(1, 4, GL_FLOAT, GL_FALSE, 4 * sizeof(GLfloat), (GLvoid*)0);
 	glVertexAttribDivisor(1, 1);  // rata cu care are loc distribuirea culorilor per instanta
 
 	// 2..5 (2+i): Matrice de pozitie
@@ -193,17 +129,18 @@ void DestroyVBO(void)
 	glDisableVertexAttribArray(1);
 	glDisableVertexAttribArray(0);
 	glBindBuffer(GL_ARRAY_BUFFER, 0);
-	glDeleteBuffers(1, &VBPos);
-	glDeleteBuffers(1, &VBCol);
-	glDeleteBuffers(1, &VBModelMat);
-	glDeleteBuffers(1, &EboId);
-	glBindVertexArray(0);
-	glDeleteVertexArrays(1, &VaoId);
+// 	glDeleteBuffers(1, &VBPos);
+// 	glDeleteBuffers(1, &VBCol);
+// 	glDeleteBuffers(1, &VBModelMat);
+// 	glDeleteBuffers(1, &EboId);
+// 	glBindVertexArray(0);
+// 	glDeleteVertexArrays(1, &VaoId);
 }
 void CreateShaders(void)
 {
 	ProgramId = LoadShaders("../../res/08_03_Shader.vert", "../../res/08_03_Shader.frag");
 	glUseProgram(ProgramId);
+	shader = new Shader("../../res/08_03_Shader.vert", "../../res/08_03_Shader.frag");
 }
 void DestroyShaders(void)
 {
@@ -214,47 +151,57 @@ void Initialize(void)
 	glClearColor(1.0f, 1.0f, 1.0f, 0.0f); // culoarea de fond a ecranului
 	CreateVBO();
 	CreateShaders();
-	viewLocation = glGetUniformLocation(ProgramId, "viewMatrix");
-	projLocation = glGetUniformLocation(ProgramId, "projectionMatrix");
-	codColLocation = glGetUniformLocation(ProgramId, "codCol");
 }
 void RenderFunction(void)
 {
+	GLuint viewLocation,
+projLocation,
+codColLocation,
+codCol;
 	glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT);
 	glEnable(GL_DEPTH_TEST);
 
 	// CreateVBO(); // decomentati acest rand daca este cazul 
-	glBindVertexArray(VaoId);
-	glBindBuffer(GL_ARRAY_BUFFER, VBPos);
-	glBindBuffer(GL_ARRAY_BUFFER, VBCol);
-	glBindBuffer(GL_ARRAY_BUFFER, VBModelMat);
-	glBindBuffer(GL_ELEMENT_ARRAY_BUFFER, EboId);
+	// glBindVertexArray(VaoId);
+	// glBindBuffer(GL_ARRAY_BUFFER, VBPos);
+	// glBindBuffer(GL_ARRAY_BUFFER, VBCol);
+	// glBindBuffer(GL_ARRAY_BUFFER, VBModelMat);
+	// glBindBuffer(GL_ELEMENT_ARRAY_BUFFER, EboId);
 
 	// matricea de vizualizare
-	Obsx = Refx + dist * cos(alpha) * cos(beta);
-	Obsy = Refy + dist * cos(alpha) * sin(beta);
-	Obsz = Refz + dist * sin(alpha);
-
-	glm::vec3 Obs = glm::vec3(Obsx, Obsy, Obsz);   // se schimba pozitia observatorului	
-	glm::vec3 PctRef = glm::vec3(Refx, Refy, Refz); // pozitia punctului de referinta
-	glm::vec3 Vert = glm::vec3(Vx, Vy, Vz); // verticala din planul de vizualizare 
-	view = glm::lookAt(Obs, PctRef, Vert);
+	view = glm::lookAt(glm::vec3(1.0f, 0.0f, 0.0f), glm::vec3(0.0f, 0.0f, 0.0f), glm::vec3(0.0f, 1.0f, 0.0f));
+	projection =  glm::infinitePerspective(3.141592f / 2.0f, GLfloat(800.0f) / GLfloat(600.0f), 1.0f);
 	glUniformMatrix4fv(viewLocation, 1, GL_FALSE, &view[0][0]);
-
-	// matricea de proiectie
-	projection = glm::infinitePerspective(fovdeg * PI / 180, GLfloat(width) / GLfloat(height), znear);
+	codColLocation = glGetUniformLocation(ProgramId, "codCol");
+	viewLocation = glGetUniformLocation(ProgramId, "viewMatrix");
+	projLocation = glGetUniformLocation(ProgramId, "projectionMatrix");
 	glUniformMatrix4fv(projLocation, 1, GL_FALSE, &projection[0][0]);
 
 	// Fetele
 	codCol = 0;
 	glUniform1i(codColLocation, codCol);
-	glDrawElementsInstanced(GL_POLYGON, 100, GL_UNSIGNED_INT, 0, INSTANCE_COUNT);
-	glDrawElementsInstanced(GL_TRIANGLES, 297, GL_UNSIGNED_INT, (GLvoid*)(100 * sizeof(GLuint)), INSTANCE_COUNT);
-
+	glDrawElementsInstanced(GL_TRIANGLES, 36, GL_UNSIGNED_BYTE, 0, INSTANCE_COUNT);
+	// Muchiile
 	codCol = 1;
 	glUniform1i(codColLocation, codCol);
-	glLineWidth(2.0f);
-	glDrawElementsInstanced(GL_LINE_LOOP, 100, GL_UNSIGNED_INT, 0, INSTANCE_COUNT);
+	glLineWidth(2.5);
+	glDrawElementsInstanced(GL_LINE_LOOP, 4, GL_UNSIGNED_BYTE, (void*)(36), INSTANCE_COUNT);
+	glDrawElementsInstanced(GL_LINE_LOOP, 4, GL_UNSIGNED_BYTE, (void*)(40), INSTANCE_COUNT);
+	glDrawElementsInstanced(GL_LINES, 8, GL_UNSIGNED_BYTE, (void*)(44), INSTANCE_COUNT);
+
+    // shader->setInt("codCol", codCol);
+    // shader->setMat4("viewMatrix", view);
+    // shader->setMat4("projectionMatrix", projection);
+    // codCol = 0;
+    // glDrawElementsInstanced(GL_TRIANGLES, 36, GL_UNSIGNED_INT, 0, INSTANCE_COUNT);
+
+    // codCol = 1;
+    // shader->setInt("codCol", codCol);
+    // glLineWidth(2.5f);
+    // glDrawElementsInstanced(GL_LINE_LOOP, 4, GL_UNSIGNED_INT, (void*)(36), INSTANCE_COUNT);
+    // glDrawElementsInstanced(GL_LINE_LOOP, 4, GL_UNSIGNED_INT, (void*)(40), INSTANCE_COUNT);
+    // glDrawElementsInstanced(GL_LINES, 8, GL_UNSIGNED_INT, (void*)(44), INSTANCE_COUNT);
+
 
 	glutSwapBuffers();
 	glFlush();
@@ -269,14 +216,12 @@ int main(int argc, char* argv[])
 	glutInit(&argc, argv);
 	glutInitDisplayMode(GLUT_RGBA | GLUT_DEPTH | GLUT_DOUBLE);
 	glutInitWindowPosition(100, 100);
-	glutInitWindowSize(1200, 900);
+	glutInitWindowSize(800, 600);
 	glutCreateWindow("<<Instanced rendering>>");
 	glewInit();
 	Initialize();
 	glutDisplayFunc(RenderFunction);
 	glutIdleFunc(RenderFunction);
-	glutKeyboardFunc(processNormalKeys);
-	glutSpecialFunc(processSpecialKeys);
 	glutCloseFunc(Cleanup);
 	glutMainLoop();
 }
